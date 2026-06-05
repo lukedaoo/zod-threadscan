@@ -13,7 +13,7 @@ static constexpr unsigned int DEFAULT_NUM_OF_FILES_TO_SEARCH = 100;
 static constexpr unsigned int DEFAULT_NUM_OF_THREAD_USAGE = 8;
 
 /* default number of runs to perform */
-static constexpr unsigned int DEFAULT_NUM_OF_RUNS = 8;
+static constexpr unsigned int DEFAULT_NUM_OF_RUNS = 1;
 
 /* Set to true to enable debug logging */
 static constexpr bool DEBUG = false;

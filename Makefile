@@ -1,14 +1,14 @@
 .PHONY: all run build debug release clean clean-all test dist
 
-CXX         ?= g++
-CSTD        ?= c++23
+CXX          ?= g++
+CSTD         ?= c++23
 RELEASE_FLAGS = -Wall -O3 -std=$(CSTD)
 DEBUG_FLAGS   = -Wall -O0 -g -fsanitize=address,undefined -std=$(CSTD)
 LDFLAGS       = -pthread
 BUILD_FLAGS  ?= $(RELEASE_FLAGS)
 ALL_FLAGS     = $(BUILD_FLAGS) $(LDFLAGS)
-TARGET        ?= threadscan
-SRC           ?= first.cpp
+TARGET       ?= threadscan
+SRC          ?= first.cpp
 DIST_DIR      = dist
 
 all: run
@@ -38,6 +38,9 @@ release:
 run: release
 	@echo "[make] starting program"
 	@./$(TARGET)
+
+run-debug: debug
+	@./$(TARGET) --path $(PWD)/RandomFiles --word quasi --num-of-files 0 --num-of-threads 0 --no-console
 
 TEST_FLAGS  = -Wall -O0 -g -std=$(CSTD)
 GTEST_LIBS  = -DGTEST_HAS_PTHREAD=1 -lgtest_main -lgtest -lpthread

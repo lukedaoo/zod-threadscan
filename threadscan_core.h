@@ -25,6 +25,8 @@ enum class ScanError : uint8_t {
     PATH_ACCESS_ERROR,
     WORD_EMPTY,
     NULL_ARGUMENT,
+    // SCAN
+    DIR_EMPTY
 };
 
 struct ReportOutputOpt;

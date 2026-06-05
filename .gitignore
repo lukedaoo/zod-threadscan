@@ -2,3 +2,4 @@ threadscan
 tests/test_all
 dist/
 config.h
+RandomFiles
