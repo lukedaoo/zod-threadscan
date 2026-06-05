@@ -1,0 +1,4 @@
+#ifndef THREADSCAN_INPUT_H
+#define THREADSCAN_INPUT_H
+
+#endif

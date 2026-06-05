@@ -1,0 +1,25 @@
+CompileFlags:
+  Add:
+    - -std=c++23
+    - -Wall
+    - -Wextra
+
+Diagnostics:
+  UnusedIncludes: Strict
+  ClangTidy:
+    Add:
+      - performance-*
+      - modernize-*
+      - readability-*
+      - bugprone-*
+    Remove:
+      - modernize-use-trailing-return-type
+      - readability-magic-numbers
+      - readability-identifier-length
+
+---
+If:
+  PathMatch: ".*\\.h"
+CompileFlags:
+  Add:
+    - -DTHREADSCAN_CORE_IMPLEMENTATION
