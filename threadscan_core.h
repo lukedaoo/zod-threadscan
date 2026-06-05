@@ -17,8 +17,12 @@ enum class ReportOutputType : uint8_t {
 };
 
 enum class ScanError : uint8_t {
+    // Input Errors
     PATH_EMPTY,
     PATH_NOT_DIRECTORY,
+    PATH_NOT_FOUND,
+    PERMISSION_DENIED,
+    PATH_ACCESS_ERROR,
     WORD_EMPTY,
     NULL_ARGUMENT,
 };

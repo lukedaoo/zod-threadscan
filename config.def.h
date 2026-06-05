@@ -18,5 +18,5 @@ static constexpr bool DEBUG = false;
 /* Set to true to enable console input */
 /* override at runtime: --console / --no-console */
 /* e.g: ./threadscan --console  */
-static constexpr bool ENABLE_CONSOLE_INPUT = true;
+static constexpr bool ENABLE_CONSOLE_INPUT = false;
 #endif
