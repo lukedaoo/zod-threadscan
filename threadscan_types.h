@@ -12,6 +12,7 @@ namespace threadscan {
 struct ScanParams {
     std::size_t number_of_files_to_search = 0;
     std::size_t number_of_threads = 0;
+    std::size_t number_of_runs = 0;
     std::string path_dir;
     std::string word_to_search;
 };
@@ -63,9 +64,10 @@ inline std::ostream& operator<<(std::ostream& os, const ScanParams& p) {
                                   : std::to_string(p.number_of_threads);
     os << "ScanParams {\n"
        << "  number_of_files_to_search = " << num_files << "\n"
-       << "  number_of_threads        = " << num_threads << "\n"
-       << "  path_dir                 = " << p.path_dir << "\n"
-       << "  word_to_search           = " << p.word_to_search << "\n"
+       << "  number_of_threads         = " << num_threads << "\n"
+       << "  number_of_runs            = " << p.number_of_runs << "\n"
+       << "  path_dir                  = " << p.path_dir << "\n"
+       << "  word_to_search            = " << p.word_to_search << "\n"
        << "}";
     return os;
 }

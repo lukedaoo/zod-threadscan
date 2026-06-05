@@ -1,5 +1,6 @@
 CXX      ?= g++
 CXXFLAGS  = -Wall -O3 -std=c++23 -pthread
+TARGET    = WordCount 
 
 .PHONY: all run clean
 .DEFAULT_GOAL := run
@@ -13,10 +14,10 @@ config:
 	fi
 
 all: config
-	$(CXX) $(CXXFLAGS) -o threadscan first.cpp
+	$(CXX) $(CXXFLAGS) -o $(TARGET) first.cpp
 
 run: all
-	./threadscan
+	./$(TARGET)
 
 clean:
-	rm -f threadscan config.h
+	rm -f $(TARGET) config.h

@@ -44,13 +44,15 @@ struct ReportOutputOpt {
 // ---- Implementation -----
 
 std::expected<ScanReport, ScanError> scan(const ScanParams& params) {
-    std::cout << "Start scanning...\n";
+    std::cout << "[scan] start: scanning...\n";
     std::cout << params << "\n";
 
     // validate params
     if (auto validate_res = validate_scan_params(params); !validate_res) {
         return std::unexpected(validate_res.error());
     }
+
+    // @TODO: scan
 
     return ScanReport{};
 }
@@ -70,18 +72,18 @@ std::expected<ScanReport, ScanError> scan(const char* path_dir,
 }
 
 void make_report(const ScanReport& rep, const ReportOutputOpt& opt) {
-    std::cout << "Start making report...\n";
+    std::cout << "[scan] report: generating...\n";
     std::cout << rep << "\n";
     switch (opt.output_type) {
     case ReportOutputType::CONSOLE:
-        std::cout << "Using console output\n";
+        std::cout << "[scan] output: using console\n";
         break;
     case ReportOutputType::CSV_FILE:
         if (opt.path_dir.empty()) {
-            std::cerr << "CSV_FILE output requires path_dir\n";
+            std::cerr << "[scan] missing-value: csv output requires path_dir\n";
             return;
         }
-        std::cout << "Using CSV_FILE output\n";
+        std::cout << "[scan] output: using csv file\n";
         break;
     }
 }

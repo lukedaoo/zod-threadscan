@@ -171,7 +171,8 @@ TEST_F(CommandLineTest, InvalidIntForFiles_UsesDefault) {
     ts::ScanParams p;
     ASSERT_TRUE(ts::get_scan_params_from_command_line(a.argc(), a.argv(), p));
     EXPECT_EQ(p.number_of_files_to_search, DEFAULT_NUM_OF_FILES_TO_SEARCH);
-    EXPECT_NE(cerr.str().find("invalid integer for '--num-of-files'"), std::string::npos);
+    EXPECT_NE(cerr.str().find("invalid integer for '--num-of-files'"),
+              std::string::npos);
 }
 
 TEST_F(CommandLineTest, InvalidIntForThreads_UsesDefault) {
@@ -181,12 +182,14 @@ TEST_F(CommandLineTest, InvalidIntForThreads_UsesDefault) {
     ts::ScanParams p;
     ASSERT_TRUE(ts::get_scan_params_from_command_line(a.argc(), a.argv(), p));
     EXPECT_EQ(p.number_of_threads, DEFAULT_NUM_OF_THREAD_USAGE);
-    EXPECT_NE(cerr.str().find("invalid integer for '--num-of-threads'"), std::string::npos);
+    EXPECT_NE(cerr.str().find("invalid integer for '--num-of-threads'"),
+              std::string::npos);
 }
 
 TEST_F(CommandLineTest, FilesNotSet_UsesDefaultAndLogs) {
-    Argv a{"prog", "--path", tmpdir_str.c_str(), "--word", "foo",
-           "--num-of-threads", "4"};
+    Argv a{"prog",   "--path", tmpdir_str.c_str(),
+           "--word", "foo",    "--num-of-threads",
+           "4"};
     CerrCapture cerr;
     ts::ScanParams p;
     ASSERT_TRUE(ts::get_scan_params_from_command_line(a.argc(), a.argv(), p));
@@ -196,7 +199,7 @@ TEST_F(CommandLineTest, FilesNotSet_UsesDefaultAndLogs) {
 }
 
 TEST_F(CommandLineTest, ThreadsNotSet_UsesDefaultAndLogs) {
-    Argv a{"prog", "--path", tmpdir_str.c_str(), "--word", "foo",
+    Argv a{"prog",           "--path", tmpdir_str.c_str(), "--word", "foo",
            "--num-of-files", "5"};
     CerrCapture cerr;
     ts::ScanParams p;
@@ -234,7 +237,7 @@ TEST_F(CommandLineTest, UnknownFlag_LogsAndContinues) {
     CerrCapture cerr;
     ts::ScanParams p;
     ASSERT_TRUE(ts::get_scan_params_from_command_line(a.argc(), a.argv(), p));
-    EXPECT_NE(cerr.str().find("unknown argument"), std::string::npos);
+    EXPECT_NE(cerr.str().find("unknown-arg"), std::string::npos);
 }
 
 TEST_F(CommandLineTest, ModeFlags_Skipped) {
@@ -273,11 +276,12 @@ TEST_F(GetParamsTest, NoConsole_MissingPath_ReturnsFalse) {
     CerrCapture cerr;
     ts::ScanParams p;
     ASSERT_FALSE(ts::get_params(a.argc(), a.argv(), p));
-    EXPECT_NE(cerr.str().find("must specify required"), std::string::npos);
+    EXPECT_NE(cerr.str().find("missing-value"), std::string::npos);
 }
 
 TEST_F(GetParamsTest, NoConsole_OnlyPathAndWord_Success) {
-    Argv a{"prog", "--no-console", "--path", tmpdir_str.c_str(), "--word", "foo"};
+    Argv a{"prog",   "--no-console", "--path", tmpdir_str.c_str(),
+           "--word", "foo"};
     CerrCapture cerr;
     ts::ScanParams p;
     ASSERT_TRUE(ts::get_params(a.argc(), a.argv(), p));
@@ -311,7 +315,7 @@ TEST_F(GetParamsTest, Console_PlusDataArgs_ReturnsFalse) {
     CerrCapture cerr;
     ts::ScanParams p;
     ASSERT_FALSE(ts::get_params(a.argc(), a.argv(), p));
-    EXPECT_NE(cerr.str().find("console input is active"), std::string::npos);
+    EXPECT_NE(cerr.str().find("[input] conflict"), std::string::npos);
 }
 
 TEST_F(GetParamsTest, Console_ErrorMentions_NoConsole) {

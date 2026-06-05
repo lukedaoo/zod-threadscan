@@ -60,12 +60,13 @@ DIST_SOURCES = first.cpp \
                threadscan_core.h threadscan_core_impl.cpp \
                threadscan_input.h threadscan_input_impl.cpp \
                threadscan_types.h \
-               config.def.h README.md LICENSE
+               config.def.h LICENSE
 
 dist:
 	@echo "[make] creating $(DIST_DIR)/"
 	@mkdir -p $(DIST_DIR)
 	@cp $(DIST_SOURCES) $(DIST_DIR)/
 	@cp dist.mk $(DIST_DIR)/Makefile
+	@cp dist.readme.md $(DIST_DIR)/README.md
 	@echo "[make] dist ready: $(DIST_DIR)/"
 
