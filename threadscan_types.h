@@ -50,6 +50,7 @@ struct ScanResult {
     std::string word_to_search;
     size_t files_intended = 0;
     size_t files_scanned = 0;
+    size_t number_of_threads = 0;
     bool is_single_threaded = true;
     // run data
     std::vector<RunTiming> run_timings;

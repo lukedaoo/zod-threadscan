@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <chrono>
+#include <ctime>
 #include <cstddef>
 #include <cstdint>
 #include <expected>
@@ -114,6 +115,29 @@ ScanResult execute_runs(std::span<const std::string> files,
     return report;
 }
 
+std::filesystem::path resolve_csv_path(const std::string& path_dir,
+                                       const ScanResult& rep) {
+    std::filesystem::path p(path_dir);
+    if (!p.extension().empty()) {
+        std::filesystem::create_directories(p.parent_path());
+        return p;
+    }
+    std::filesystem::create_directories(p);
+    auto now = std::chrono::system_clock::now();
+    std::time_t t = std::chrono::system_clock::to_time_t(now);
+    std::tm tm{};
+    localtime_r(&t, &tm);
+    char ts[16];
+    std::strftime(ts, sizeof(ts), "%Y%m%d_%H%M%S", &tm);
+    std::string threads_part = rep.is_single_threaded
+                                   ? "single"
+                                   : std::to_string(rep.number_of_threads) + "t";
+    std::string filename = std::string(ts) + "_" + rep.word_to_search + "_" +
+                           std::to_string(rep.files_scanned) + "files_" +
+                           threads_part + ".csv";
+    return p / filename;
+}
+
 }  // namespace
 
 struct ReportOutputOpt {
@@ -166,7 +190,8 @@ std::expected<ScanResult, ScanError> scan(const ScanParams& params,
     report.path_dir = params.path_dir;
     report.word_to_search = params.word_to_search;
     report.files_intended = files.size();
-    report.files_scanned = report.final_results.size();
+    report.files_scanned      = report.final_results.size();
+    report.number_of_threads  = params.number_of_threads;
     report.is_single_threaded = params.number_of_threads == 0;
     return report;
 }
@@ -190,8 +215,15 @@ void make_report(const ScanResult& rep, const ReportOutputOpt& opt) {
         if (opt.path_dir.empty()) {
             print_csv(rep, std::cout);
         } else {
-            std::ofstream f(opt.path_dir);
+            auto filepath = resolve_csv_path(opt.path_dir, rep);
+            std::ofstream f(filepath);
+            if (!f.is_open()) {
+                std::cerr << "[report] error: cannot open csv file: "
+                          << filepath << "\n";
+                return;
+            }
             print_csv(rep, f);
+            std::cout << "[report] csv saved: " << filepath << "\n";
         }
     } else {
         print_console(rep);

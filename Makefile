@@ -45,6 +45,16 @@ run-single-thread: clean-all release
 run-multiple-thread: clean-all release
 	@./$(TARGET) --path $(PWD)/RandomFiles --word quasi --num-of-files 1000 --num-of-threads 5 --chunk --runs 5 --no-console
 
+exp: clean-all config
+	@echo "[make] compiling exp"
+	@$(CXX) $(RELEASE_FLAGS) $(LDFLAGS) -I. -o exp exp.cpp
+
+run-exp1: exp
+	@./exp --path $(PWD)/RandomFiles --word quasi --experiment-1
+
+run-exp2: exp
+	@./exp --path $(PWD)/RandomFiles --word quasi --experiment-2
+
 TEST_FLAGS  = -Wall -O0 -g -std=$(CSTD)
 GTEST_LIBS  = -DGTEST_HAS_PTHREAD=1 -lgtest_main -lgtest -lpthread
 TEST_SRCS   = $(wildcard tests/test_*.cpp)
@@ -68,7 +78,7 @@ DIST_SOURCES = first.cpp \
                threadscan_input.h threadscan_input_impl.cpp \
                threadscan_printer.h threadscan_printer_impl.cpp \
                threadscan_types.h \
-               config.def.h LICENSE
+               config.def.h LICENSE AUTHOR
 
 dist:
 	@echo "[make] creating $(DIST_DIR)/"
@@ -76,6 +86,5 @@ dist:
 	@mkdir -p $(DIST_DIR)
 	@cp $(DIST_SOURCES) $(DIST_DIR)/
 	@cp dist.mk $(DIST_DIR)/Makefile
-	@cp dist.readme.md $(DIST_DIR)/README.md
 	@echo "[make] dist ready: $(DIST_DIR)/"
 

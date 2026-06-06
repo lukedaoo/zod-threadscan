@@ -18,7 +18,6 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     ts::ScanResult scan_result = std::move(*result);
-    ts::make_report(scan_result,
-                    {.output_type = ts::ReportOutputType::CSV_FILE});
+    ts::make_report(scan_result);
     return 0;
 }

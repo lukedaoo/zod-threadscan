@@ -45,10 +45,10 @@ void print_console(const ScanResult& report) {
 void print_csv(const ScanResult& report, std::ostream& os) {
     const std::string mode =
         report.is_single_threaded ? "single-threaded" : "multi-threaded";
-    os << "directory,word,files_intended,files_scanned,mode\n";
+    os << "directory,word,files_intended,files_scanned,threads,mode\n";
     os << report.path_dir << "," << report.word_to_search << ","
-       << report.files_intended << "," << report.files_scanned << "," << mode
-       << "\n\n";
+       << report.files_intended << "," << report.files_scanned << ","
+       << report.number_of_threads << "," << mode << "\n\n";
     os << "run,time_sec,occurrences\n";
 
     double total_sec = 0.0;

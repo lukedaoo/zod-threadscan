@@ -10,7 +10,7 @@ static constexpr const char* DEFAULT_SCAN_DIR = "/tmp/";
 static constexpr unsigned int DEFAULT_NUM_OF_FILES_TO_SEARCH = 100;
 
 /* default number of threads to use */
-static constexpr unsigned int DEFAULT_NUM_OF_THREAD_USAGE = 8;
+static constexpr unsigned int DEFAULT_NUM_OF_THREAD_USAGE = 2;
 
 /* default number of runs to perform */
 static constexpr unsigned int DEFAULT_NUM_OF_RUNS = 1;
@@ -19,7 +19,7 @@ static constexpr unsigned int DEFAULT_NUM_OF_RUNS = 1;
 static constexpr bool DEBUG = false;
 
 /* default multi-thread strategy: "chunk" or "queue" */
-static constexpr const char* DEFAULT_MUL_THREAD_STRATEGY = "chunk";
+static constexpr const char* DEFAULT_MUL_THREAD_STRATEGY = "queue";
 
 /* Set to true to enable console input */
 /* override at runtime: --console / --no-console */

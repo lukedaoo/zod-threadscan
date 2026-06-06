@@ -1,5 +1,7 @@
 threadscan
+exp
 tests/test_all
 dist/
+data/
 config.h
 RandomFiles
