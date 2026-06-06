@@ -45,6 +45,13 @@ struct RunTiming {
 };
 
 struct ScanResult {
+    // metadata — populated by scan()
+    std::string path_dir;
+    std::string word_to_search;
+    size_t files_intended = 0;
+    size_t files_scanned = 0;
+    bool is_single_threaded = true;
+    // run data
     std::vector<RunTiming> run_timings;
     std::vector<FileScanResult> final_results;
 };

@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <expected>
 #include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <memory>
 #include <span>
@@ -151,13 +152,23 @@ std::expected<ScanResult, ScanError> scan(const ScanParams& params,
     const auto& files = *files_result;
 
     auto strategy = create_strategy(params);
-    std::string_view run_mode =
-        params.number_of_threads == 0 ? "single-threaded" : "multi-threaded";
-    std::cout << "\nSearching for word '" << params.word_to_search << "' in "
+    std::string run_mode = (params.number_of_threads == 0)
+                               ? "single-threaded"
+                               : "multi-threaded with " +
+                                     std::to_string(params.number_of_threads) +
+                                     " threads";
+    std::cout << "Searching for word '" << params.word_to_search << "' in "
               << files.size() << " files (" << run_mode << ")...\n";
 
     size_t runs = std::max(params.number_of_runs, size_t{1});
-    return execute_runs(files, params.word_to_search, runs, strategy.get());
+    auto report =
+        execute_runs(files, params.word_to_search, runs, strategy.get());
+    report.path_dir = params.path_dir;
+    report.word_to_search = params.word_to_search;
+    report.files_intended = files.size();
+    report.files_scanned = report.final_results.size();
+    report.is_single_threaded = params.number_of_threads == 0;
+    return report;
 }
 
 std::expected<ScanResult, ScanError> scan(const char* path_dir,
@@ -175,43 +186,27 @@ std::expected<ScanResult, ScanError> scan(const char* path_dir,
 }
 
 void make_report(const ScanResult& rep, const ReportOutputOpt& opt) {
-    size_t total_occurrences = rep.run_timings.back().total_occurrences;
-    switch (opt.output_type) {
-    case ReportOutputType::CONSOLE: {
-        std::cout << "Finished searching " << rep.final_results.size()
-                  << " files:\n";
-        std::cout << "Number of occurrences found: " << total_occurrences
-                  << "\n";
-        if (rep.run_timings.size() == 1) {
-            std::cout << "Time taken: " << rep.run_timings[0].elapsed_ms()
-                      << " ms\n";
-            return;
+    if (opt.output_type == ReportOutputType::CSV_FILE) {
+        if (opt.path_dir.empty()) {
+            print_csv(rep, std::cout);
+        } else {
+            std::ofstream f(opt.path_dir);
+            print_csv(rep, f);
         }
-        uint64_t total_ms = 0;
-        for (size_t i = 0; i < rep.run_timings.size(); ++i) {
-            uint64_t ms = rep.run_timings[i].elapsed_ms();
-            total_ms += ms;
-            std::cout << "  run " << (i + 1) << ": " << ms
-                      << " ms | total_occurrences: "
-                      << rep.run_timings[i].total_occurrences << "\n";
-        }
-        if (!rep.run_timings.empty()) {
-            double avg = static_cast<double>(total_ms) /
-                         static_cast<double>(rep.run_timings.size());
-            std::cout << "  average: " << avg << " ms\n";
-        }
-    } break;
-    case ReportOutputType::CSV_FILE:
-        if (opt.path_dir.empty() && DEBUG) {
-            std::cerr << "[scan] missing-value: csv output requires path_dir\n";
-            return;
-        }
-        if (DEBUG) {
-            std::cout << "[scan] output: using csv file\n";
-        }
-        break;
+    } else {
+        print_console(rep);
     }
 }
-void make_report(const ScanResult& rep) { make_report(rep, ReportOutputOpt{}); }
+void make_report(const ScanResult& rep) {
+    if (DEFAULT_PRINTER_TYPE != nullptr) {
+        if (std::string_view(DEFAULT_PRINTER_TYPE) == "console") {
+            make_report(rep, {.output_type = ReportOutputType::CONSOLE});
+        } else if (std::string_view(DEFAULT_PRINTER_TYPE) == "csv") {
+            make_report(rep, {.output_type = ReportOutputType::CSV_FILE});
+        }
+        return;
+    }
+    print_console(rep);
+}
 
 }  // namespace threadscan

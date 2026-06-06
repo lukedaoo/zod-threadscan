@@ -6,6 +6,7 @@
 #include <string_view>
 
 #include "config.h"
+#include "threadscan_printer.h"
 #include "threadscan_searcher.h"
 namespace threadscan {
 
@@ -42,5 +43,6 @@ void make_report(const ScanResult& rep, const ReportOutputOpt& output_opt);
 #ifdef THREADSCAN_CORE_IMPLEMENTATION
 #include "threadscan_core_impl.cpp"
 #include "threadscan_searcher_impl.cpp"
+#include "threadscan_printer_impl.cpp"
 #endif
 #endif

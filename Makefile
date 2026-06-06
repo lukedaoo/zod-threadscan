@@ -39,11 +39,12 @@ run: release
 	@echo "[make] starting program"
 	@./$(TARGET)
 
-run-single-thread: release
+run-single-thread: clean-all release
 	@./$(TARGET) --path $(PWD)/RandomFiles --word quasi --num-of-files 1000 --num-of-threads 0 --no-console
 
-run-multiple-thread: release
+run-multiple-thread: clean-all release
 	@./$(TARGET) --path $(PWD)/RandomFiles --word quasi --num-of-files 1000 --num-of-threads 5 --chunk --runs 5 --no-console
+
 TEST_FLAGS  = -Wall -O0 -g -std=$(CSTD)
 GTEST_LIBS  = -DGTEST_HAS_PTHREAD=1 -lgtest_main -lgtest -lpthread
 TEST_SRCS   = $(wildcard tests/test_*.cpp)
@@ -65,6 +66,7 @@ DIST_SOURCES = first.cpp \
                threadscan_core.h threadscan_core_impl.cpp \
                threadscan_searcher.h threadscan_searcher_impl.cpp \
                threadscan_input.h threadscan_input_impl.cpp \
+               threadscan_printer.h threadscan_printer_impl.cpp \
                threadscan_types.h \
                config.def.h LICENSE
 
