@@ -63,6 +63,7 @@ clean-all:
 
 DIST_SOURCES = first.cpp \
                threadscan_core.h threadscan_core_impl.cpp \
+               threadscan_searcher.h threadscan_searcher_impl.cpp \
                threadscan_input.h threadscan_input_impl.cpp \
                threadscan_types.h \
                config.def.h LICENSE

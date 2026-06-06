@@ -45,7 +45,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     ts::ScanReport scan_report = std::move(*result);
-    ts::make_report(scan_report, {.output_type = ts::ReportOutputType::CONSOLE,
-                                  .path_dir = "tmp/ts"});
+    ts::make_report(scan_report,
+                    {.output_type = ts::ReportOutputType::CONSOLE});
     return 0;
 }

@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -16,13 +17,6 @@ struct ScanParams {
     std::string path_dir;
     std::string word_to_search;
 };
-
-// struct ScanResult {
-//     std::uint64_t id;
-//     std::uint64_t start_time;
-//     std::uint64_t end_time;
-//     std::uint32_t thread_id;
-// };
 
 struct FileScanResult {
     size_t occurrences = 0;
@@ -39,28 +33,9 @@ struct ScanReport {
     std::vector<FileScanResult> results;
 };
 
-// inline std::ostream& operator<<(std::ostream& os, const ScanResult& r) {
-//     os << "ScanResult {\n"
-//        << "  id         = " << r.id << "\n"
-//        << "  thread_id  = " << r.thread_id << "\n"
-//        << "  start_time = " << r.start_time << "\n"
-//        << "  end_time   = " << r.end_time << "\n"
-//        << "  elapsed    = " << (r.end_time - r.start_time) << "\n"
-//        << "}";
-//     return os;
-// }
-//
-// inline std::ostream& operator<<(std::ostream& os, const ScanReport& rep) {
-//     os << "ScanReport {\n"
-//        << "  start_time = " << rep.start_time << "\n"
-//        << "  end_time   = " << rep.end_time << "\n"
-//        << "  results    = " << rep.results.size() << " items\n"
-//        << "}\n";
-//     for (const auto& r : rep.results) {
-//         os << r << "\n";
-//     }
-//     return os;
-// }
+using SortCriteria =
+    std::function<bool(const std::string&, const std::string&)>;
+
 
 inline std::ostream& operator<<(std::ostream& os, const ScanParams& p) {
     std::string num_files = p.number_of_files_to_search == 0

@@ -41,6 +41,7 @@ class ScanParamsTest : public ::testing::TestWithParam<ScanParamsCase> {
         s_tmpdir = std::filesystem::temp_directory_path() / "ts_core_test";
         std::filesystem::create_directories(s_tmpdir);
         s_tmpdir_str = s_tmpdir.string();
+        std::ofstream{s_tmpdir / "dummy.txt"};
     }
     static void TearDownTestSuite() { std::filesystem::remove_all(s_tmpdir); }
 };

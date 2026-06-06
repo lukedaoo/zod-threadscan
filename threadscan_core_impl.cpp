@@ -4,12 +4,10 @@
 #include <cstdint>
 #include <expected>
 #include <filesystem>
-#include <fstream>
 #include <iostream>
 #include <string>
 #include <string_view>
 #include <system_error>
-#include <thread>
 #include <vector>
 
 #include "config.h"
@@ -49,36 +47,6 @@ uint64_t now_ms() {
                std::chrono::steady_clock::now().time_since_epoch())
         .count();
 }
-
-FileScanResult scan_one_file(const std::string& file_path,
-                             std::string_view word) {
-    constexpr uint8_t ERR_OPEN = 1 << 0;  // 0000'0001
-    constexpr uint8_t ERR_IO = 1 << 1;    // 0000'0010
-    constexpr uint8_t FOUND = 1 << 2;     // 0000'0100
-
-    FileScanResult result;
-    std::ifstream file(file_path, std::ios::in);
-
-    if (!file.good()) {
-        result.error_flags |= ERR_OPEN;
-        return result;
-    }
-
-    std::string line;
-    while (std::getline(file, line)) {
-        size_t pos = line.find(word);
-        while (pos != std::string::npos) {
-            ++result.occurrences;
-            pos = line.find(word, pos + 1);
-            result.error_flags |= FOUND;
-        }
-    }
-    if (file.bad()) {
-        result.error_flags |= ERR_IO;
-    }
-    return result;
-}
-
 };  // namespace
 
 struct ReportOutputOpt {
@@ -87,28 +55,14 @@ struct ReportOutputOpt {
 };
 
 // ---- Implementation -----
+
+void apply_sort(std::vector<std::string>& files, const SortCriteria& criteria) {
+    std::ranges::sort(files, criteria);
+}
+
 std::expected<ScanReport, ScanError> scan(const ScanParams& params) {
-    if (auto validate_res = validate_scan_params(params); !validate_res) {
-        return std::unexpected(validate_res.error());
-    }
-
-    bool scan_all_files = params.number_of_files_to_search == 0;
-    bool is_single_thread = params.number_of_threads == 0;
-    std::string_view run_mode =
-        is_single_thread ? "single-threaded" : "multi-threaded";
-
-    // get files
-    std::vector<std::string> files_path;
-    files_path.reserve(params.number_of_files_to_search);
-
-    for (const auto& entry :
-         std::filesystem::directory_iterator(params.path_dir)) {
-        if (entry.is_regular_file()) {
-            files_path.push_back(entry.path().string());
-        }
-    }
-    std::ranges::sort(files_path, [](const std::string& a,
-                                     const std::string& b) {
+    SortCriteria default_criteria = [](const std::string& a,
+                                       const std::string& b) -> bool {
         auto extract = [](const std::string& s) -> int {
             auto stem = std::filesystem::path(s).stem().string();
             auto it = std::ranges::find_if(stem.begin(), stem.end(), ::isdigit);
@@ -118,70 +72,60 @@ std::expected<ScanReport, ScanError> scan(const ScanParams& params) {
             return std::stoi(std::string(it, stem.end()));
         };
         return extract(a) < extract(b);
-    });
+    };
+    return scan(params, default_criteria);
+}
+
+std::expected<ScanReport, ScanError> scan(const ScanParams& params,
+                                          const SortCriteria& criteria) {
+    if (auto validate_res = validate_scan_params(params); !validate_res) {
+        return std::unexpected(validate_res.error());
+    }
+
+    bool scan_all_files = params.number_of_files_to_search == 0;
+    bool is_single_thread = params.number_of_threads == 0;
+    std::string_view run_mode =
+        is_single_thread ? "single-threaded" : "multi-threaded";
+
+    std::vector<std::string> files_path;
+
+    for (const auto& entry :
+         std::filesystem::directory_iterator(params.path_dir)) {
+        if (entry.is_regular_file()) {
+            files_path.push_back(entry.path().string());
+        }
+    }
+
+    apply_sort(files_path, criteria);
+
     if (!scan_all_files &&
         files_path.size() > params.number_of_files_to_search) {
         files_path.resize(params.number_of_files_to_search);
     }
-    if (files_path.size() == 0) {
+    if (files_path.empty()) {
         return std::unexpected(ScanError::DIR_EMPTY);
     }
+
     size_t files_count = files_path.size();
-    std::cout << "Searching for word '" << params.word_to_search << "' in "
+    std::cout << "\nSearching for word '" << params.word_to_search << "' in "
               << files_count << " files (" << run_mode << ")...\n";
 
-    if (is_single_thread) {
-        ScanReport report;
-        report.results.reserve(scan_all_files
-                                   ? files_path.size()
-                                   : params.number_of_files_to_search);
-        report.start_time = now_ms();
-        for (const auto& path : files_path) {
-            FileScanResult res = scan_one_file(path, params.word_to_search);
-            report.results.push_back(res);
-        }
-        report.end_time = now_ms();
-        return report;
-    }
-
     ScanReport report;
-    size_t num_threads = std::min(params.number_of_threads, files_count);
-
-    const size_t base = files_count / num_threads;
-    const size_t reminder = files_count % num_threads;
-
-    std::vector<std::thread> pool;
-    std::vector<FileScanResult> thread_results(num_threads);
-    pool.reserve(num_threads);
-
-    size_t begin = 0;
     report.start_time = now_ms();
-    for (size_t t = 0; t < num_threads; ++t) {
-        const size_t count = base + (t < reminder ? 1 : 0);
-        const size_t end = begin + count;
 
-        pool.emplace_back([&, t, begin, end]() {
-            FileScanResult local;
+    if (is_single_thread) {
+        report.results = run_single_threaded(files_path, params.word_to_search);
+    } else {
+        // std::cout << "Using chunk strategy\n";
+        // ChunkStrategy strategy(params.number_of_threads);
 
-            for (size_t i = begin; i < end; ++i) {
-                FileScanResult r =
-                    scan_one_file(files_path[i], params.word_to_search);
-
-                local.occurrences += r.occurrences;
-                local.error_flags |= r.error_flags;
-            }
-
-            thread_results[t] = local;
-        });
-
-        begin = end;
+        // std::cout << "Using queue strategy\n";
+        QueueStrategy strategy(params.number_of_threads);
+        report.results =
+            run_multi_threaded(files_path, params.word_to_search, strategy);
     }
 
-    for (auto& th : pool) {
-        th.join();
-    }
     report.end_time = now_ms();
-    report.results = std::move(thread_results);
     return report;
 }
 
@@ -209,7 +153,8 @@ void make_report(const ScanReport& rep, const ReportOutputOpt& opt) {
             total_files_with_word++;
         }
     }
-    double time_taken_in_seconds = (rep.end_time - rep.start_time) / 1000.;
+    double time_taken_in_seconds =
+        static_cast<double>(rep.end_time - rep.start_time) / 1000.;
     switch (opt.output_type) {
     case ReportOutputType::CONSOLE:
         std::cout << "Finished searching " << rep.results.size() << " files:\n";
@@ -229,4 +174,5 @@ void make_report(const ScanReport& rep, const ReportOutputOpt& opt) {
     }
 }
 void make_report(const ScanReport& rep) { make_report(rep, ReportOutputOpt{}); }
+
 }  // namespace threadscan

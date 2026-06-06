@@ -6,6 +6,7 @@
 #include <string_view>
 
 #include "config.h"
+#include "threadscan_searcher.h"
 namespace threadscan {
 
 struct ScanParams;
@@ -31,6 +32,8 @@ enum class ScanError : uint8_t {
 
 struct ReportOutputOpt;
 std::expected<ScanReport, ScanError> scan(const ScanParams& params);
+std::expected<ScanReport, ScanError> scan(const ScanParams& params,
+                                          const SortCriteria& criteria);
 std::expected<ScanReport, ScanError> scan(const char* path_dir,
                                           const char* word_to_search);
 void make_report(const ScanReport& rep);
@@ -38,5 +41,6 @@ void make_report(const ScanReport& rep, const ReportOutputOpt& output_opt);
 }  // namespace threadscan
 #ifdef THREADSCAN_CORE_IMPLEMENTATION
 #include "threadscan_core_impl.cpp"
+#include "threadscan_searcher_impl.cpp"
 #endif
 #endif
