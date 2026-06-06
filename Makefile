@@ -39,9 +39,11 @@ run: release
 	@echo "[make] starting program"
 	@./$(TARGET)
 
-run-debug: debug
-	@./$(TARGET) --path $(PWD)/RandomFiles --word quasi --num-of-files 0 --num-of-threads 0 --no-console
+run-single-thread: release
+	@./$(TARGET) --path $(PWD)/RandomFiles --word quasi --num-of-files 250 --num-of-threads 0 --no-console
 
+run-multiple-thread: release
+	@./$(TARGET) --path $(PWD)/RandomFiles --word quasi --num-of-files 250 --num-of-threads 5 --no-console
 TEST_FLAGS  = -Wall -O0 -g -std=$(CSTD)
 GTEST_LIBS  = -DGTEST_HAS_PTHREAD=1 -lgtest_main -lgtest -lpthread
 TEST_SRCS   = $(wildcard tests/test_*.cpp)

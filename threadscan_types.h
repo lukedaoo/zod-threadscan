@@ -17,43 +17,50 @@ struct ScanParams {
     std::string word_to_search;
 };
 
-struct ScanResult {
-    std::uint64_t id;
-    std::uint64_t start_time;
-    std::uint64_t end_time;
-    std::uint32_t thread_id;
-    std::string path;
+// struct ScanResult {
+//     std::uint64_t id;
+//     std::uint64_t start_time;
+//     std::uint64_t end_time;
+//     std::uint32_t thread_id;
+// };
+
+struct FileScanResult {
+    size_t occurrences = 0;
+    // 0b0000'0000 = no error
+    // 0b0000'0001 = open error
+    // 0b0000'0010 = io error
+    // 0b0000'0100 = word was found
+    uint8_t error_flags = 0;
 };
 
 struct ScanReport {
     std::uint64_t start_time;
     std::uint64_t end_time;
-    std::vector<ScanResult> results;
+    std::vector<FileScanResult> results;
 };
 
-inline std::ostream& operator<<(std::ostream& os, const ScanResult& r) {
-    os << "ScanResult {\n"
-       << "  id         = " << r.id << "\n"
-       << "  thread_id  = " << r.thread_id << "\n"
-       << "  start_time = " << r.start_time << "\n"
-       << "  end_time   = " << r.end_time << "\n"
-       << "  elapsed    = " << (r.end_time - r.start_time) << "\n"
-       << "  path       = " << r.path << "\n"
-       << "}";
-    return os;
-}
-
-inline std::ostream& operator<<(std::ostream& os, const ScanReport& rep) {
-    os << "ScanReport {\n"
-       << "  start_time = " << rep.start_time << "\n"
-       << "  end_time   = " << rep.end_time << "\n"
-       << "  results    = " << rep.results.size() << " items\n"
-       << "}\n";
-    for (const auto& r : rep.results) {
-        os << r << "\n";
-    }
-    return os;
-}
+// inline std::ostream& operator<<(std::ostream& os, const ScanResult& r) {
+//     os << "ScanResult {\n"
+//        << "  id         = " << r.id << "\n"
+//        << "  thread_id  = " << r.thread_id << "\n"
+//        << "  start_time = " << r.start_time << "\n"
+//        << "  end_time   = " << r.end_time << "\n"
+//        << "  elapsed    = " << (r.end_time - r.start_time) << "\n"
+//        << "}";
+//     return os;
+// }
+//
+// inline std::ostream& operator<<(std::ostream& os, const ScanReport& rep) {
+//     os << "ScanReport {\n"
+//        << "  start_time = " << rep.start_time << "\n"
+//        << "  end_time   = " << rep.end_time << "\n"
+//        << "  results    = " << rep.results.size() << " items\n"
+//        << "}\n";
+//     for (const auto& r : rep.results) {
+//         os << r << "\n";
+//     }
+//     return os;
+// }
 
 inline std::ostream& operator<<(std::ostream& os, const ScanParams& p) {
     std::string num_files = p.number_of_files_to_search == 0
