@@ -64,8 +64,8 @@ static constexpr bool DEBUG = false;
 ```
 
 ## Results
-![Data](assets/Data.xlssx)
-![Report](assets/Report.pdf)
+- [Data.xlsx](assets/Data.xlsx)
+- [Report.pdf](assets/Report.pdf)
 
 ### Single vs Multiple Threads
 
