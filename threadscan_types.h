@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 
+#include "config.h"
 namespace threadscan {
 
 enum class MulThreadStrategy : uint8_t { CHUNK, QUEUE };
@@ -25,7 +26,8 @@ struct ScanParams {
     std::size_t number_of_runs = 0;
     std::string path_dir;
     std::string word_to_search;
-    MulThreadStrategy mul_thread_strategy = MulThreadStrategy::CHUNK;
+    MulThreadStrategy mul_thread_strategy =
+        str_to_mul_thread_strategy(DEFAULT_MUL_THREAD_STRATEGY);
 };
 
 struct FileScanResult {

@@ -215,7 +215,8 @@ bool get_scan_params_from_console(ScanParams& out) {
         .number_of_runs = DEFAULT_NUM_OF_RUNS,
         .path_dir = std::move(path_dir),
         .word_to_search = std::move(word),
-    };
+        .mul_thread_strategy =
+            str_to_mul_thread_strategy(DEFAULT_MUL_THREAD_STRATEGY)};
     return true;
 }
 

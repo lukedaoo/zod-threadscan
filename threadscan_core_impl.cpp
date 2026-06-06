@@ -1,8 +1,8 @@
 #include <algorithm>
 #include <chrono>
-#include <ctime>
 #include <cstddef>
 #include <cstdint>
+#include <ctime>
 #include <expected>
 #include <filesystem>
 #include <fstream>
@@ -129,9 +129,9 @@ std::filesystem::path resolve_csv_path(const std::string& path_dir,
     localtime_r(&t, &tm);
     char ts[16];
     std::strftime(ts, sizeof(ts), "%Y%m%d_%H%M%S", &tm);
-    std::string threads_part = rep.is_single_threaded
-                                   ? "single"
-                                   : std::to_string(rep.number_of_threads) + "t";
+    std::string threads_part =
+        rep.is_single_threaded ? "single"
+                               : std::to_string(rep.number_of_threads) + "t";
     std::string filename = std::string(ts) + "_" + rep.word_to_search + "_" +
                            std::to_string(rep.files_scanned) + "files_" +
                            threads_part + ".csv";
@@ -190,8 +190,8 @@ std::expected<ScanResult, ScanError> scan(const ScanParams& params,
     report.path_dir = params.path_dir;
     report.word_to_search = params.word_to_search;
     report.files_intended = files.size();
-    report.files_scanned      = report.final_results.size();
-    report.number_of_threads  = params.number_of_threads;
+    report.files_scanned = report.final_results.size();
+    report.number_of_threads = params.number_of_threads;
     report.is_single_threaded = params.number_of_threads == 0;
     return report;
 }
