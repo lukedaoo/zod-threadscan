@@ -26,7 +26,8 @@ Requires all four flags:
   --path <DIR> \
   --word <WORD> \
   --num-of-files <N> \
-  --num-of-threads <N>
+  --num-of-threads <N> \
+  --runs <N>
 ```
 
 | Flag | Description |
@@ -35,6 +36,7 @@ Requires all four flags:
 | `--word <WORD>` | Text to search for |
 | `--num-of-files <N>` | Max files to search (0 = all) |
 | `--num-of-threads <N>` | Number of threads to use |
+| `--runs <N>` | Number of times to run |
 | `--console` | Force interactive input |
 | `--no-console` | Disable interactive input (use CLI flags) |
 
@@ -49,15 +51,6 @@ Requires all four flags:
 ## Configuration
 
 `config.def.h` is copied to `config.h` automatically on build. Edit `config.h` to change defaults:
-
-```c
-static constexpr const char* DEFAULT_SCAN_DIR = "/tmp/";
-static constexpr unsigned int DEFAULT_NUM_OF_FILES_TO_SEARCH = 100;
-static constexpr unsigned int DEFAULT_NUM_OF_THREAD_USAGE = 8;
-static constexpr unsigned int DEFAULT_NUM_OF_RUNS = 1;
-static constexpr bool ENABLE_CONSOLE_INPUT = true;
-static constexpr bool DEBUG = false;
-```
 
 ## License
 

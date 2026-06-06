@@ -17,8 +17,9 @@ struct SuppressOut {
     ~SuppressOut() { std::cout.rdbuf(orig); }
 };
 
-static size_t total_occurrences(const ts::ScanReport& rep) {
-    return std::accumulate(rep.results.begin(), rep.results.end(), size_t{0},
+static size_t total_occurrences(const ts::ScanResult& rep) {
+    return std::accumulate(rep.final_results.begin(), rep.final_results.end(),
+                           size_t{0},
                            [](size_t s, const ts::FileScanResult& r) {
                                return s + r.occurrences;
                            });
@@ -75,9 +76,9 @@ TEST_P(MultiThreadCountTest, MatchesSingleThreadCount) {
     };
 
     size_t single = run(0);
-    size_t multi  = run(GetParam());
+    size_t multi = run(GetParam());
     EXPECT_EQ(single, 60U);
-    EXPECT_EQ(multi,  60U);
+    EXPECT_EQ(multi, 60U);
 }
 
 INSTANTIATE_TEST_SUITE_P(ThreadCounts, MultiThreadCountTest,

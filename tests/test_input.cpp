@@ -326,3 +326,71 @@ TEST_F(GetParamsTest, Console_ErrorMentions_NoConsole) {
     ASSERT_FALSE(ts::get_params(a.argc(), a.argv(), p));
     EXPECT_NE(cerr.str().find("--no-console"), std::string::npos);
 }
+
+TEST_F(CommandLineTest, ChunkFlag_SetsChunkStrategy) {
+    Argv a{"prog", "--path", tmpdir_str.c_str(), "--word", "w", "--chunk"};
+    CerrCapture cerr;
+    ts::ScanParams p;
+    ASSERT_TRUE(ts::get_scan_params_from_command_line(a.argc(), a.argv(), p));
+    EXPECT_EQ(p.mul_thread_strategy, ts::MulThreadStrategy::CHUNK);
+    EXPECT_EQ(cerr.str().find("strategy not set"), std::string::npos);
+}
+
+TEST_F(CommandLineTest, QueueFlag_SetsQueueStrategy) {
+    Argv a{"prog", "--path", tmpdir_str.c_str(), "--word", "w", "--queue"};
+    CerrCapture cerr;
+    ts::ScanParams p;
+    ASSERT_TRUE(ts::get_scan_params_from_command_line(a.argc(), a.argv(), p));
+    EXPECT_EQ(p.mul_thread_strategy, ts::MulThreadStrategy::QUEUE);
+}
+
+TEST_F(CommandLineTest, NoStrategyFlag_UsesDefaultAndLogs) {
+    Argv a{"prog", "--path", tmpdir_str.c_str(), "--word", "w"};
+    CerrCapture cerr;
+    ts::ScanParams p;
+    ASSERT_TRUE(ts::get_scan_params_from_command_line(a.argc(), a.argv(), p));
+    EXPECT_NE(cerr.str().find("strategy not set"), std::string::npos);
+}
+
+TEST_F(CommandLineTest, ChunkThenQueue_LastWins) {
+    Argv a{"prog", "--path", tmpdir_str.c_str(), "--word", "w", "--chunk", "--queue"};
+    CerrCapture cerr;
+    ts::ScanParams p;
+    ASSERT_TRUE(ts::get_scan_params_from_command_line(a.argc(), a.argv(), p));
+    EXPECT_EQ(p.mul_thread_strategy, ts::MulThreadStrategy::QUEUE);
+}
+
+TEST_F(CommandLineTest, QueueThenChunk_LastWins) {
+    Argv a{"prog", "--path", tmpdir_str.c_str(), "--word", "w", "--queue", "--chunk"};
+    CerrCapture cerr;
+    ts::ScanParams p;
+    ASSERT_TRUE(ts::get_scan_params_from_command_line(a.argc(), a.argv(), p));
+    EXPECT_EQ(p.mul_thread_strategy, ts::MulThreadStrategy::CHUNK);
+}
+
+TEST_F(GetParamsTest, Console_PlusChunk_ReturnsFalse) {
+    Argv a{"prog", "--console", "--chunk"};
+    CoutSuppress cout_sup;
+    CerrCapture cerr;
+    ts::ScanParams p;
+    ASSERT_FALSE(ts::get_params(a.argc(), a.argv(), p));
+    EXPECT_NE(cerr.str().find("[input] conflict"), std::string::npos);
+}
+
+TEST_F(GetParamsTest, Console_PlusQueue_ReturnsFalse) {
+    Argv a{"prog", "--console", "--queue"};
+    CoutSuppress cout_sup;
+    CerrCapture cerr;
+    ts::ScanParams p;
+    ASSERT_FALSE(ts::get_params(a.argc(), a.argv(), p));
+    EXPECT_NE(cerr.str().find("[input] conflict"), std::string::npos);
+}
+
+TEST_F(GetParamsTest, Console_PlusRuns_ReturnsFalse) {
+    Argv a{"prog", "--console", "--runs", "3"};
+    CoutSuppress cout_sup;
+    CerrCapture cerr;
+    ts::ScanParams p;
+    ASSERT_FALSE(ts::get_params(a.argc(), a.argv(), p));
+    EXPECT_NE(cerr.str().find("[input] conflict"), std::string::npos);
+}

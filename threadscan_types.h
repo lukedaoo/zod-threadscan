@@ -10,12 +10,22 @@
 
 namespace threadscan {
 
+enum class MulThreadStrategy : uint8_t { CHUNK, QUEUE };
+
+inline MulThreadStrategy str_to_mul_thread_strategy(const char* s) {
+    if (s != nullptr && std::string_view(s) == "queue") {
+        return MulThreadStrategy::QUEUE;
+    }
+    return MulThreadStrategy::CHUNK;
+}
+
 struct ScanParams {
     std::size_t number_of_files_to_search = 0;
     std::size_t number_of_threads = 0;
     std::size_t number_of_runs = 0;
     std::string path_dir;
     std::string word_to_search;
+    MulThreadStrategy mul_thread_strategy = MulThreadStrategy::CHUNK;
 };
 
 struct FileScanResult {
@@ -27,15 +37,20 @@ struct FileScanResult {
     uint8_t error_flags = 0;
 };
 
-struct ScanReport {
-    std::uint64_t start_time;
-    std::uint64_t end_time;
-    std::vector<FileScanResult> results;
+struct RunTiming {
+    std::uint64_t start_ms = 0;
+    std::uint64_t end_ms = 0;
+    std::size_t total_occurrences = 0;
+    [[nodiscard]] std::uint64_t elapsed_ms() const { return end_ms - start_ms; }
+};
+
+struct ScanResult {
+    std::vector<RunTiming> run_timings;
+    std::vector<FileScanResult> final_results;
 };
 
 using SortCriteria =
     std::function<bool(const std::string&, const std::string&)>;
-
 
 inline std::ostream& operator<<(std::ostream& os, const ScanParams& p) {
     std::string num_files = p.number_of_files_to_search == 0
@@ -44,10 +59,13 @@ inline std::ostream& operator<<(std::ostream& os, const ScanParams& p) {
     std::string num_threads = p.number_of_threads == 0
                                   ? "no threads"
                                   : std::to_string(p.number_of_threads);
+    std::string strategy =
+        p.mul_thread_strategy == MulThreadStrategy::CHUNK ? "chunk" : "queue";
     os << "ScanParams {\n"
        << "  number_of_files_to_search = " << num_files << "\n"
        << "  number_of_threads         = " << num_threads << "\n"
        << "  number_of_runs            = " << p.number_of_runs << "\n"
+       << "  mul_thread_strategy       = " << strategy << "\n"
        << "  path_dir                  = " << p.path_dir << "\n"
        << "  word_to_search            = " << p.word_to_search << "\n"
        << "}";

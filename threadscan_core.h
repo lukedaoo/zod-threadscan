@@ -10,7 +10,7 @@
 namespace threadscan {
 
 struct ScanParams;
-struct ScanReport;
+struct ScanResult;
 
 enum class ReportOutputType : uint8_t {
     CONSOLE,  // = 0, console output
@@ -31,13 +31,13 @@ enum class ScanError : uint8_t {
 };
 
 struct ReportOutputOpt;
-std::expected<ScanReport, ScanError> scan(const ScanParams& params);
-std::expected<ScanReport, ScanError> scan(const ScanParams& params,
+std::expected<ScanResult, ScanError> scan(const ScanParams& params);
+std::expected<ScanResult, ScanError> scan(const ScanParams& params,
                                           const SortCriteria& criteria);
-std::expected<ScanReport, ScanError> scan(const char* path_dir,
+std::expected<ScanResult, ScanError> scan(const char* path_dir,
                                           const char* word_to_search);
-void make_report(const ScanReport& rep);
-void make_report(const ScanReport& rep, const ReportOutputOpt& output_opt);
+void make_report(const ScanResult& rep);
+void make_report(const ScanResult& rep, const ReportOutputOpt& output_opt);
 }  // namespace threadscan
 #ifdef THREADSCAN_CORE_IMPLEMENTATION
 #include "threadscan_core_impl.cpp"

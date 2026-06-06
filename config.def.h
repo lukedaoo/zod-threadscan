@@ -18,6 +18,9 @@ static constexpr unsigned int DEFAULT_NUM_OF_RUNS = 1;
 /* Set to true to enable debug logging */
 static constexpr bool DEBUG = false;
 
+/* default multi-thread strategy: "chunk" or "queue" */
+static constexpr const char* DEFAULT_MUL_THREAD_STRATEGY = "chunk";
+
 /* Set to true to enable console input */
 /* override at runtime: --console / --no-console */
 /* e.g: ./threadscan --console  */

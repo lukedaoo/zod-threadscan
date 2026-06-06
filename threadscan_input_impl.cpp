@@ -170,7 +170,8 @@ enum ArgBits : uint8_t {
     THREADS = 1 << 2,
     WORD = 1 << 3,
     RUNS = 1 << 4,
-    ALL = PATH | FILES | THREADS | WORD | RUNS
+    STRATEGY = 1 << 5,
+    ALL = PATH | FILES | THREADS | WORD | RUNS | STRATEGY
 };
 }  // namespace
 
@@ -228,10 +229,13 @@ bool get_scan_params_from_command_line(int argc, char* argv[],
     int64_t num_threads =
         DEFAULT_NUM_OF_THREAD_USAGE < 0 ? 0 : DEFAULT_NUM_OF_THREAD_USAGE;
     int64_t num_runs = DEFAULT_NUM_OF_RUNS <= 1 ? 1 : DEFAULT_NUM_OF_RUNS;
+    MulThreadStrategy mul_strategy =
+        str_to_mul_thread_strategy(DEFAULT_MUL_THREAD_STRATEGY);
 
     bool files_set = false;
     bool threads_set = false;
     bool runs_set = false;
+    bool strategy_set = false;
 
     for (int i = 1; i < argc; ++i) {
         std::string_view arg = argv[i];
@@ -252,6 +256,12 @@ bool get_scan_params_from_command_line(int argc, char* argv[],
                                  threads_set);
         } else if (arg == "--runs") {
             parse_optional_int64("--runs", i, argc, argv, num_runs, runs_set);
+        } else if (arg == "--chunk") {
+            mul_strategy = MulThreadStrategy::CHUNK;
+            strategy_set = true;
+        } else if (arg == "--queue") {
+            mul_strategy = MulThreadStrategy::QUEUE;
+            strategy_set = true;
         } else if (arg == "--console" || arg == "--no-console") {
             continue;
         } else {
@@ -275,6 +285,10 @@ bool get_scan_params_from_command_line(int argc, char* argv[],
         std::cerr << "[input] default-used: runs not set, using default: "
                   << num_runs << "\n";
     }
+    if (!strategy_set) {
+        std::cerr << "[input] default-used: strategy not set, using default: "
+                  << DEFAULT_MUL_THREAD_STRATEGY << "\n";
+    }
 
     out = {
         .number_of_files_to_search = static_cast<std::size_t>(num_files),
@@ -282,6 +296,7 @@ bool get_scan_params_from_command_line(int argc, char* argv[],
         .number_of_runs = static_cast<std::size_t>(num_runs),
         .path_dir = std::move(path_dir),
         .word_to_search = std::move(word),
+        .mul_thread_strategy = mul_strategy,
     };
     return true;
 }
@@ -306,6 +321,8 @@ bool get_params(int argc, char* argv[], ScanParams& out) {
             mask |= ArgBits::WORD;
         } else if (arg == "--runs") {
             mask |= ArgBits::RUNS;
+        } else if (arg == "--chunk" || arg == "--queue") {
+            mask |= ArgBits::STRATEGY;
         }
     }
 

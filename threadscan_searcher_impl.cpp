@@ -1,5 +1,4 @@
 #include <fstream>
-#include <mutex>
 #include <thread>
 
 #include "threadscan_searcher.h"
@@ -7,12 +6,12 @@
 
 namespace threadscan {
 
+constexpr uint8_t ERR_OPEN = 1 << 0;  // 0000'0001
+constexpr uint8_t ERR_IO = 1 << 1;    // 0000'0010
+constexpr uint8_t FOUND = 1 << 2;     // 0000'0100
+
 FileScanResult scan_one_file(const std::string& file_path,
                              std::string_view word) {
-    constexpr uint8_t ERR_OPEN = 1 << 0;  // 0000'0001
-    constexpr uint8_t ERR_IO = 1 << 1;    // 0000'0010
-    constexpr uint8_t FOUND = 1 << 2;     // 0000'0100
-
     FileScanResult result;
     std::ifstream file(file_path, std::ios::in);
 
@@ -62,7 +61,7 @@ void ChunkStrategy::execute(std::span<const std::string> files,
     const size_t base = files_count / n;
     const size_t rem = files_count % n;
 
-    out.resize(n);
+    out.resize(files_count);
     std::vector<std::thread> pool;
     pool.reserve(n);
 
@@ -70,14 +69,10 @@ void ChunkStrategy::execute(std::span<const std::string> files,
     for (size_t t = 0; t < n; ++t) {
         const size_t count = base + (t < rem ? 1 : 0);
         const size_t end = begin + count;
-        pool.emplace_back([&, t, begin, end]() {
-            FileScanResult local;
+        pool.emplace_back([&, begin, end]() {
             for (size_t i = begin; i < end; ++i) {
-                FileScanResult r = scan_one_file(files[i], word);
-                local.occurrences += r.occurrences;
-                local.error_flags |= r.error_flags;
+                out[i] = scan_one_file(files[i], word);
             }
-            out[t] = local;
         });
         begin = end;
     }
@@ -92,25 +87,20 @@ void QueueStrategy::execute(std::span<const std::string> files,
     size_t files_count = files.size();
     size_t n = std::min(num_threads, files_count);
 
+    out.resize(files_count);
     std::atomic<size_t> idx{0};
-    std::mutex out_mutex;
     std::vector<std::thread> pool;
     pool.reserve(n);
 
     for (size_t t = 0; t < n; ++t) {
         pool.emplace_back([&]() {
-            FileScanResult local;
             while (true) {
                 size_t i = idx.fetch_add(1, std::memory_order_relaxed);
                 if (i >= files_count) {
                     break;
                 }
-                FileScanResult r = scan_one_file(files[i], word);
-                local.occurrences += r.occurrences;
-                local.error_flags |= r.error_flags;
+                out[i] = scan_one_file(files[i], word);
             }
-            std::lock_guard<std::mutex> lock(out_mutex);
-            out.push_back(local);
         });
     }
     for (auto& th : pool) {

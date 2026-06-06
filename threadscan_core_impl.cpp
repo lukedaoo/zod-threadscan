@@ -5,6 +5,8 @@
 #include <expected>
 #include <filesystem>
 #include <iostream>
+#include <memory>
+#include <span>
 #include <string>
 #include <string_view>
 #include <system_error>
@@ -47,20 +49,80 @@ uint64_t now_ms() {
                std::chrono::steady_clock::now().time_since_epoch())
         .count();
 }
-};  // namespace
+
+std::expected<std::vector<std::string>, ScanError> prepare_file_paths(
+    const ScanParams& params, const SortCriteria& criteria) {
+    std::vector<std::string> files;
+    for (const auto& entry :
+         std::filesystem::directory_iterator(params.path_dir)) {
+        if (entry.is_regular_file()) {
+            files.push_back(entry.path().string());
+        }
+    }
+    std::ranges::sort(files, criteria);
+    bool scan_all = params.number_of_files_to_search == 0;
+    if (!scan_all && files.size() > params.number_of_files_to_search) {
+        files.resize(params.number_of_files_to_search);
+    }
+    if (files.empty()) {
+        return std::unexpected(ScanError::DIR_EMPTY);
+    }
+    return files;
+}
+
+std::unique_ptr<ScanStrategy> create_strategy(const ScanParams& params) {
+    if (params.number_of_threads == 0) {
+        return nullptr;
+    }
+    if (params.mul_thread_strategy == MulThreadStrategy::CHUNK) {
+        return std::make_unique<ChunkStrategy>(params.number_of_threads);
+    }
+    return std::make_unique<QueueStrategy>(params.number_of_threads);
+}
+
+ScanResult execute_runs(std::span<const std::string> files,
+                        std::string_view word, size_t runs,
+                        ScanStrategy* strategy) {
+    ScanResult report;
+    size_t ref_occurrences = 0;
+    for (size_t run = 0; run < runs; ++run) {
+        RunTiming t;
+        t.start_ms = now_ms();
+        auto current_results = (strategy == nullptr)
+                                   ? run_single_threaded(files, word)
+                                   : run_multi_threaded(files, word, *strategy);
+        t.end_ms = now_ms();
+
+        for (const auto& r : current_results) {
+            t.total_occurrences += r.occurrences;
+        }
+
+        if (run == 0) {
+            ref_occurrences = t.total_occurrences;
+        } else if (t.total_occurrences != ref_occurrences) {
+            std::cerr << "[report] error: total_occurrences mismatch at run"
+                      << run << "!\n";
+        }
+
+        if (run == runs - 1) {
+            report.final_results = std::move(current_results);
+        }
+
+        report.run_timings.push_back(t);
+    }
+    return report;
+}
+
+}  // namespace
 
 struct ReportOutputOpt {
     ReportOutputType output_type = ReportOutputType::CONSOLE;
     std::string path_dir;
 };
 
-// ---- Implementation -----
+// ---- Public API -----
 
-void apply_sort(std::vector<std::string>& files, const SortCriteria& criteria) {
-    std::ranges::sort(files, criteria);
-}
-
-std::expected<ScanReport, ScanError> scan(const ScanParams& params) {
+std::expected<ScanResult, ScanError> scan(const ScanParams& params) {
     SortCriteria default_criteria = [](const std::string& a,
                                        const std::string& b) -> bool {
         auto extract = [](const std::string& s) -> int {
@@ -76,60 +138,29 @@ std::expected<ScanReport, ScanError> scan(const ScanParams& params) {
     return scan(params, default_criteria);
 }
 
-std::expected<ScanReport, ScanError> scan(const ScanParams& params,
+std::expected<ScanResult, ScanError> scan(const ScanParams& params,
                                           const SortCriteria& criteria) {
-    if (auto validate_res = validate_scan_params(params); !validate_res) {
-        return std::unexpected(validate_res.error());
+    if (auto v = validate_scan_params(params); !v) {
+        return std::unexpected(v.error());
     }
 
-    bool scan_all_files = params.number_of_files_to_search == 0;
-    bool is_single_thread = params.number_of_threads == 0;
+    auto files_result = prepare_file_paths(params, criteria);
+    if (!files_result) {
+        return std::unexpected(files_result.error());
+    }
+    const auto& files = *files_result;
+
+    auto strategy = create_strategy(params);
     std::string_view run_mode =
-        is_single_thread ? "single-threaded" : "multi-threaded";
-
-    std::vector<std::string> files_path;
-
-    for (const auto& entry :
-         std::filesystem::directory_iterator(params.path_dir)) {
-        if (entry.is_regular_file()) {
-            files_path.push_back(entry.path().string());
-        }
-    }
-
-    apply_sort(files_path, criteria);
-
-    if (!scan_all_files &&
-        files_path.size() > params.number_of_files_to_search) {
-        files_path.resize(params.number_of_files_to_search);
-    }
-    if (files_path.empty()) {
-        return std::unexpected(ScanError::DIR_EMPTY);
-    }
-
-    size_t files_count = files_path.size();
+        params.number_of_threads == 0 ? "single-threaded" : "multi-threaded";
     std::cout << "\nSearching for word '" << params.word_to_search << "' in "
-              << files_count << " files (" << run_mode << ")...\n";
+              << files.size() << " files (" << run_mode << ")...\n";
 
-    ScanReport report;
-    report.start_time = now_ms();
-
-    if (is_single_thread) {
-        report.results = run_single_threaded(files_path, params.word_to_search);
-    } else {
-        // std::cout << "Using chunk strategy\n";
-        // ChunkStrategy strategy(params.number_of_threads);
-
-        // std::cout << "Using queue strategy\n";
-        QueueStrategy strategy(params.number_of_threads);
-        report.results =
-            run_multi_threaded(files_path, params.word_to_search, strategy);
-    }
-
-    report.end_time = now_ms();
-    return report;
+    size_t runs = std::max(params.number_of_runs, size_t{1});
+    return execute_runs(files, params.word_to_search, runs, strategy.get());
 }
 
-std::expected<ScanReport, ScanError> scan(const char* path_dir,
+std::expected<ScanResult, ScanError> scan(const char* path_dir,
                                           const char* word_to_search) {
     if (path_dir == nullptr || word_to_search == nullptr) {
         return std::unexpected(ScanError::NULL_ARGUMENT);
@@ -143,25 +174,33 @@ std::expected<ScanReport, ScanError> scan(const char* path_dir,
     return scan(params);
 }
 
-void make_report(const ScanReport& rep, const ReportOutputOpt& opt) {
-    size_t total_occurrences = 0;
-    size_t total_files_with_word = 0;
-    for (const auto& r : rep.results) {
-        total_occurrences += r.occurrences;
-        bool found_in_file = (r.error_flags & (1 << 2)) != 0;
-        if (found_in_file) {
-            total_files_with_word++;
-        }
-    }
-    double time_taken_in_seconds =
-        static_cast<double>(rep.end_time - rep.start_time) / 1000.;
+void make_report(const ScanResult& rep, const ReportOutputOpt& opt) {
+    size_t total_occurrences = rep.run_timings.back().total_occurrences;
     switch (opt.output_type) {
-    case ReportOutputType::CONSOLE:
-        std::cout << "Finished searching " << rep.results.size() << " files:\n";
-        std::cout << "Number of occurrences: " << total_occurrences << " in "
-                  << total_files_with_word << " files\n";
-        std::cout << "Time taken: " << time_taken_in_seconds << " seconds\n";
-        break;
+    case ReportOutputType::CONSOLE: {
+        std::cout << "Finished searching " << rep.final_results.size()
+                  << " files:\n";
+        std::cout << "Number of occurrences found: " << total_occurrences
+                  << "\n";
+        if (rep.run_timings.size() == 1) {
+            std::cout << "Time taken: " << rep.run_timings[0].elapsed_ms()
+                      << " ms\n";
+            return;
+        }
+        uint64_t total_ms = 0;
+        for (size_t i = 0; i < rep.run_timings.size(); ++i) {
+            uint64_t ms = rep.run_timings[i].elapsed_ms();
+            total_ms += ms;
+            std::cout << "  run " << (i + 1) << ": " << ms
+                      << " ms | total_occurrences: "
+                      << rep.run_timings[i].total_occurrences << "\n";
+        }
+        if (!rep.run_timings.empty()) {
+            double avg = static_cast<double>(total_ms) /
+                         static_cast<double>(rep.run_timings.size());
+            std::cout << "  average: " << avg << " ms\n";
+        }
+    } break;
     case ReportOutputType::CSV_FILE:
         if (opt.path_dir.empty() && DEBUG) {
             std::cerr << "[scan] missing-value: csv output requires path_dir\n";
@@ -173,6 +212,6 @@ void make_report(const ScanReport& rep, const ReportOutputOpt& opt) {
         break;
     }
 }
-void make_report(const ScanReport& rep) { make_report(rep, ReportOutputOpt{}); }
+void make_report(const ScanResult& rep) { make_report(rep, ReportOutputOpt{}); }
 
 }  // namespace threadscan
