@@ -63,6 +63,16 @@ static constexpr bool ENABLE_CONSOLE_INPUT = true;
 static constexpr bool DEBUG = false;
 ```
 
+## Results
+
+### Single vs Multiple Threads
+
+![Single vs multiple thread performance](asset/single_vs_multiple_thread_res.png)
+
+### Multiple Thread Scaling
+
+![Multiple thread results](asset/mutliple_thread_res.png)
+
 ## License
 
 MIT
