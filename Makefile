@@ -86,5 +86,8 @@ dist:
 	@mkdir -p $(DIST_DIR)
 	@cp $(DIST_SOURCES) $(DIST_DIR)/
 	@cp dist.mk $(DIST_DIR)/Makefile
+	@mkdir -p $(DIST_DIR)/assets
+	@cp assets/Data.xlsx $(DIST_DIR)/assets
+	@cp assets/Report.pdf $(DIST_DIR)/assets
 	@echo "[make] dist ready: $(DIST_DIR)/"
 

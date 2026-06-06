@@ -64,14 +64,16 @@ static constexpr bool DEBUG = false;
 ```
 
 ## Results
+![Data](assets/Data.xlssx)
+![Report](assets/Report.pdf)
 
 ### Single vs Multiple Threads
 
-![Single vs multiple thread performance](asset/single_vs_multiple_thread_res.png)
+![Single vs multiple thread performance](assets/single_vs_multiple_thread_res.png)
 
 ### Multiple Thread Scaling
 
-![Multiple thread results](asset/mutliple_thread_res.png)
+![Multiple thread results](assets/mutliple_thread_res.png)
 
 ## License
 
