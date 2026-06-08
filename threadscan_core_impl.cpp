@@ -126,7 +126,11 @@ std::filesystem::path resolve_csv_path(const std::string& path_dir,
     auto now = std::chrono::system_clock::now();
     std::time_t t = std::chrono::system_clock::to_time_t(now);
     std::tm tm{};
-    localtime_r(&t, &tm);
+#ifdef _WIN32 
+    localtime_s(&tm, &t);
+#else 
+    localtime_r(&t, &tm)
+#endif
     char ts[16];
     std::strftime(ts, sizeof(ts), "%Y%m%d_%H%M%S", &tm);
     std::string threads_part =
